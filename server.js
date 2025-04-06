@@ -65,4 +65,6 @@ app.post("/api/edit", (req, res) => {
   });
 });
 
-app.listen(port,
+app.listen(port, () => {
+  console.log(`🚀 Server läuft auf Port ${port}`);
+});
