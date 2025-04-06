@@ -10,7 +10,16 @@ dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// 👉 Lade API-Key aus Umgebungsvariablen ODER zur Not aus Fallback (nur debug!)
+const openaiApiKey = process.env.OPENAI_API_KEY || "sk-...DEIN_BACKUP_KEY_HIER_EINTRAGEN";
+if (!openaiApiKey || openaiApiKey.startsWith("sk-...")) {
+  console.warn("❌ OPENAI_API_KEY fehlt! Trage ihn in Railway unter Variables ein.");
+} else {
+  console.log("✅ OPENAI_API_KEY geladen.");
+}
+
+const openai = new OpenAI({ apiKey: openaiApiKey });
 
 app.use(cors());
 app.use(express.static("public"));
@@ -47,7 +56,7 @@ app.post("/api/edit", (req, res) => {
 
       res.status(200).json({ image: response.data[0].url });
     } catch (error) {
-      console.error("OpenAI Fehler:", error);
+      console.error("🔥 Fehler bei OpenAI-Aufruf:", error);
       res.status(500).send("Image edit failed");
     } finally {
       fs.unlinkSync(image.path);
@@ -56,6 +65,4 @@ app.post("/api/edit", (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`🚀 Server läuft auf Port ${port}`);
-});
+app.listen(port,
