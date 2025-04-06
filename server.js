@@ -50,7 +50,7 @@ app.post("/api/edit", (req, res) => {
         .png()
         .toFile(convertedPath);
 
-      const prompt = `Ändere die Farbe der HAUSWAND in diesem Bild zu ${color}. 
+      const prompt = `Ändere die Farbe der HAUSWAND in diesem Bild zu einem saftigen Grün. 
       Die neue Farbe soll deutlich sichtbar sein. Alle anderen Bildbereiche bleiben unverändert.`;
 
       console.log("🧠 Prompt an OpenAI:", prompt);
