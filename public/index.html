@@ -38,57 +38,51 @@
       const file = document.getElementById("fileInput").files[0];
       const color = document.getElementById("colorPicker").value;
       const preview = document.getElementById("preview");
-
-      preview.innerHTML = "⏳ Bitte warten, dein Bild wird bearbeitet...";
-
+  
+      preview.innerHTML = "⏳ Bild wird bearbeitet...";
+  
       if (!file) {
         alert("Bitte lade ein PNG-Bild hoch.");
         preview.innerHTML = "";
         return;
       }
-
-      if (file.type !== "image/png") {
-        alert("Nur PNG-Dateien sind erlaubt!");
-        preview.innerHTML = "";
-        return;
-      }
-
-      if (file.size > 4 * 1024 * 1024) {
-        alert("Das Bild darf maximal 4MB groß sein.");
-        preview.innerHTML = "";
-        return;
-      }
-
+  
       const formData = new FormData();
       formData.append("image", file);
       formData.append("color", color);
-
+  
+      console.log("🎨 Farbe:", color);
+      console.log("📤 Sende Bild an /api/edit...");
+  
       try {
         const res = await fetch("/api/edit", {
           method: "POST",
           body: formData,
         });
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error("Fehlerhafte Antwort:", text);
-          throw new Error("Fehler beim Server: " + text);
+  
+        const text = await res.text();
+        console.log("📥 Antwort:", text);
+  
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          throw new Error("Antwort ist kein gültiges JSON: " + text);
         }
-
-        const data = await res.json();
-
+  
         if (data.image) {
           preview.innerHTML = `<img src="${data.image}" alt="Bearbeitetes Bild" />`;
         } else {
-          alert("Fehler bei der Bearbeitung");
+          alert("Fehler bei der Bearbeitung: Keine Bild-URL zurückgegeben.");
           preview.innerHTML = "";
         }
       } catch (error) {
-        console.error("Fehler beim Fetch:", error);
+        console.error("🔥 Fehler beim Fetch:", error);
         alert("Fehler beim Hochladen oder Bearbeiten des Bildes.");
         preview.innerHTML = "";
       }
     }
   </script>
+  
 </body>
 </html>
