@@ -14,16 +14,16 @@ const port = process.env.PORT || 3000;
 
 const openaiApiKey = process.env.OPENAI_API_KEY;
 if (!openaiApiKey) {
-  console.error("❌ OPENAI_API_KEY fehlt! Bitte in Railway als Variable setzen.");
+  console.error("❌ OPENAI_API_KEY fehlt! Bitte in Railway setzen.");
   process.exit(1);
 }
 
 const openai = new OpenAI({ apiKey: openaiApiKey });
 
 app.use(cors());
-app.use(express.static("public")); // wichtig für index.html
+app.use(express.static("public"));
 
-// Root Weiterleitung auf index.html (nur als Fallback)
+// Optional: Root-Route zeigt index.html
 app.get("/", (req, res) => {
   res.sendFile(path.resolve("public/index.html"));
 });
@@ -32,7 +32,7 @@ app.post("/api/edit", (req, res) => {
   const form = new multiparty.Form();
 
   form.parse(req, async (err, fields, files) => {
-    if (err) return res.status(500).send("Fehler beim Parsen des Formulars");
+    if (err) return res.status(500).send("Formular-Fehler");
 
     const color = fields.color?.[0];
     const image = files.image?.[0];
@@ -45,17 +45,19 @@ app.post("/api/edit", (req, res) => {
 
     try {
       await sharp(image.path)
-        .resize({ width: 512 })
+        .resize({ width: 512 }) // schnellere Verarbeitung
         .ensureAlpha()
         .png()
         .toFile(convertedPath);
 
-      const prompt = `Ändere die Wandfarbe des Hauses im Bild zu ${color}. Lasse den Rest des Bildes unverändert.`;
-      console.log("📤 Prompt:", prompt);
+      const prompt = `Ändere die Farbe der HAUSWAND in diesem Bild zu ${color}. 
+      Die neue Farbe soll deutlich sichtbar sein. Alle anderen Bildbereiche bleiben unverändert.`;
 
+      console.log("🧠 Prompt an OpenAI:", prompt);
+
+      // ✨ KEINE MASKE MEHR — nur das Bild!
       const response = await openai.images.edit({
         image: fs.createReadStream(convertedPath),
-        mask: fs.createReadStream(convertedPath),
         prompt: prompt,
         n: 1,
         size: "1024x1024",
@@ -65,12 +67,12 @@ app.post("/api/edit", (req, res) => {
       if (imageUrl) {
         res.status(200).json({ image: imageUrl });
       } else {
-        res.status(500).send("OpenAI hat kein Bild zurückgegeben.");
+        res.status(500).send("OpenAI hat kein Bild zurückgegeben");
       }
 
     } catch (error) {
-      console.error("Fehler beim Bearbeiten:", error);
-      res.status(500).send("Fehler beim Bearbeiten");
+      console.error("❌ Fehler bei OpenAI:", error);
+      res.status(500).send("Fehler bei der Bildbearbeitung");
     } finally {
       fs.unlinkSync(image.path);
       fs.unlinkSync(convertedPath);
